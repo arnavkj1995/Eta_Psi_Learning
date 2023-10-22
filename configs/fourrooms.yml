@@ -1,0 +1,101 @@
+name: 'SingleAgentRunnerEval'
+kwargs:
+  experiment_manager:
+    name: 'Experiment'
+    kwargs:
+      name: &run_name 'Logging' 
+      save_dir: '~/scratch/hive/experiment'
+      saving_schedule:
+        name: 'PeriodicSchedule'
+        kwargs:
+          off_value: False
+          on_value: True
+          period: 1000000
+  train_steps: 200000
+  test_frequency: &timeout 200
+  test_episodes: 1
+  max_steps_per_episode: 27000
+  plot_frequency: 50
+  stack_size: &stack_size 1
+  
+  agent:
+    name: StateSRAgent
+    kwargs:
+      gamma: 0.95
+      batch_size: 32
+      batch_length: 50
+      log_frequency: 10
+      plot_frequency: 5000000
+      min_policy_tuning: 2000
+      min_replay_history: 500
+      n_step: 1
+      target_net_soft_update: False
+      target_net_update_fraction: 0.1
+      policy: "exploration"
+      epsilon: 0.05
+      target_net_update_schedule:
+        name: 'PeriodicSchedule'
+        kwargs:
+          off_value: False
+          on_value: True
+          period: 1
+      sr_net:
+        name: "RecurrentSR"
+        kwargs:
+          encoded_dim: 256
+          last_step: True
+          state_encoder_net:
+            name: "MLP"
+            kwargs:
+              hidden_units: []
+              activation_fn: 
+                name: 'LeakyReLU'
+          sr_net:
+            name: "MLP"
+            kwargs:
+              hidden_units: [128]
+          transition_net:
+            name: "GRUCell"
+            kwargs:
+              hidden_size: 256
+      optimizer:
+        name: 'Adam'
+        kwargs:
+          lr: 0.0003
+      sr_loss_fn: 
+        name: "MSELoss"
+      replay_buffer:
+        name: 'RecurrentReplayBufferV2'
+        kwargs:
+          capacity: 200000
+          directory: "~/scratch/SR_exploration/fourrooms/"
+          
+  environment:
+    name: 'GymEnv'
+    kwargs:
+      env_name: 'FourRooms-v0'
+      width: 7
+      height: 7
+      explore: False
+      timeout: *timeout
+  
+  eval_environment:
+    name: 'GymEnv'
+    kwargs:
+      env_name: 'FourRooms-v0'
+      width: 7
+      height: 7
+      explore: False
+      timeout: *timeout
+
+  loggers:
+    -
+      name: ChompLogger
+    - 
+      name: WandbLogger
+      kwargs:
+        project: "Eta_Psi_Learning"
+        group: "fourrooms"
+        name: "fourrooms"
+        resume: "allow"
+        entity: "scaling-rl"
