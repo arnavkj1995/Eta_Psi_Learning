@@ -25,3 +25,12 @@ register(
     entry_point='envs.chains:RiverSwimEnv'
 )
 
+register(
+    'DiscreteReacher-v0',
+    entry_point='envs.control:Reacher'
+)
+
+register(
+    'DiscretePusher-v0',
+    entry_point='envs.control:Pusher'
+)

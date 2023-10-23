@@ -7,18 +7,6 @@ from hive.agents.qnets.mlp import MLPNetwork
 from hive.agents.qnets.utils import calculate_output_dim
 
 class ConvNet(nn.Module):
-    """
-    Basic convolutional neural network architecture. Applies a number of
-    convolutional layers (each followed by a ReLU activation), and then
-    feeds the output into an :py:class:`hive.agents.qnets.mlp.MLPNetwork`.
-
-    Note, if :obj:`channels` is :const:`None`, the network created for the
-    convolution portion of the architecture is simply an
-    :py:class:`torch.nn.Identity` module. If :obj:`mlp_layers` is
-    :const:`None`, the mlp portion of the architecture is an
-    :py:class:`torch.nn.Identity` module.
-    """
-
     def __init__(
         self,
         in_dim,
@@ -27,30 +15,8 @@ class ConvNet(nn.Module):
         kernel_sizes=1,
         strides=1,
         paddings=0,
-        normalization_factor=255,
-        noisy=False,
-        std_init=0.5,
+        normalization_factor=255
     ):
-        """
-        Args:
-            in_dim (tuple): The tuple of observations dimension (channels, width,
-                height).
-            channels (list): The size of output channel for each convolutional layer.
-            mlp_layers (list): The number of neurons for each mlp layer after the
-                convolutional layers.
-            kernel_sizes (list | int): The kernel size for each convolutional layer
-            strides (list | int): The stride used for each convolutional layer.
-            paddings (list | int): The size of the padding used for each convolutional
-                layer.
-            normalization_factor (float | int): What the input is divided by before
-                the forward pass of the network.
-            noisy (bool): Whether the MLP part of the network will use
-                :py:class:`~hive.agents.qnets.noisy_linear.NoisyLinear` layers or
-                :py:class:`torch.nn.Linear` layers.
-            std_init (float): The range for the initialization of the standard
-                deviation of the weights in
-                :py:class:`~hive.agents.qnets.noisy_linear.NoisyLinear`.
-        """
         super().__init__()
         self._normalization_factor = normalization_factor
         if channels is not None:
@@ -87,7 +53,7 @@ class ConvNet(nn.Module):
         mlp_seq = []
         conv_output_size = calculate_output_dim(self.conv, in_dim)
         mlp_layers = [int(np.prod(conv_output_size)), *mlp_layers]
-        print (mlp_layers)
+        
         for i in range(0, len(mlp_layers) - 1):
             mlp_seq.append(
                 torch.nn.Linear(mlp_layers[i], mlp_layers[i + 1]
@@ -97,16 +63,6 @@ class ConvNet(nn.Module):
                 mlp_seq.append(torch.nn.ReLU())
     
         self.mlp = torch.nn.Sequential(*mlp_seq)
-        
-        # if mlp_layers is not None:
-        #     # MLP Layers
-        #     print
-            
-        #     self.mlp = MLPNetwork(
-        #         conv_output_size, mlp_layers, noisy=noisy, std_init=std_init, last_layer_activ=True
-        #     )
-        # else:
-        #     self.mlp = torch.nn.Identity()
 
     def forward(self, x):
         sh = x.shape
@@ -116,5 +72,4 @@ class ConvNet(nn.Module):
         x = self.conv(x)
         x = torch.flatten(x, start_dim=1)
         x = self.mlp(x) #, flatten_dim=1)
-        print (x.shape)
         return x #.reshape(sh[:-3] + x.shape[1:])
