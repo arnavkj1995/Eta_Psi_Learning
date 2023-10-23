@@ -1,0 +1,106 @@
+name: 'SingleAgentRunnerEval'
+kwargs:
+  experiment_manager:
+    name: 'Experiment'
+    kwargs:
+      name: &run_name 'Logging' 
+      save_dir: '~/scratch/hive/experiment'
+      saving_schedule:
+        name: 'PeriodicSchedule'
+        kwargs:
+          off_value: False
+          on_value: True
+          period: 1000000
+  train_steps: 200000
+  test_frequency: &timeout 100
+  test_episodes: 1
+  max_steps_per_episode: 27000
+  plot_frequency: 50
+  stack_size: &stack_size 1
+  
+  agent:
+    name: StateSRPGAgent
+    kwargs:
+      gamma: 0.95
+      batch_size: 256
+      batch_length: 100
+      log_frequency: 100
+      plot_frequency: 5000000
+      min_policy_tuning: 10
+      n_step: 1
+      n_psi_nets: 2
+      target_net_update_fraction: 0.005
+      policy: "exploration"
+      epsilon: 0.05
+      grad_clip: 5.0
+      update_frequency: 1
+      action_noise: .1
+      target_noise: .2
+      target_noise_clip: .5
+      min_replay_history: 10000
+      traj_encoder_net:
+        name: "RecurrentEncoder"
+        kwargs:
+          encoded_dim: 256
+          last_step: True
+          state_encoder_net:
+            name: "MLP"
+            kwargs:
+              hidden_units: [256, 256]
+            activation_fn: 
+                name: 'GeLU'
+          transition_net:
+            name: "GRUCell"
+            kwargs:
+              hidden_size: 256
+      psi_net:
+          name: "MLP"
+          kwargs:
+            hidden_units: [256, 256]
+      actor_net:
+          name: "MLP"
+          kwargs:
+            hidden_units: [256, 256]
+      actor_optimizer_fn:
+        name: 'Adam'
+        kwargs:
+          lr: 0.0003
+      psi_optimizer_fn:
+        name: 'Adam'
+        kwargs:
+          lr: 0.0003
+      psi_loss_fn: 
+        name: "MSELoss"
+      replay_buffer:
+        name: 'RecurrentReplayBufferV2'
+        kwargs:
+          capacity: 500000
+          directory: "~/scratch/SF_exploration/reacher/"
+      num_bins: 2
+      bin_size: 7
+
+  environment:
+    name: 'GymEnv'
+    kwargs:
+      env_name: 'DiscreteReacher'
+      bins: 7
+      timeout: *timeout
+
+  eval_environment:
+    name: 'GymEnv'
+    kwargs:
+      env_name: 'DiscreteReacher'
+      bins: 7
+      timeout: *timeout
+
+  loggers:
+    -
+      name: ChompLogger
+    - 
+      name: WandbLogger
+      kwargs:
+        project: "Eta_Psi_Learning"
+        group: "reacher"
+        name: "reacher"
+        resume: "allow"
+        entity: "scaling-rl"
