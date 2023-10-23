@@ -98,4 +98,4 @@ kwargs:
         group: "grid"
         name: "grid"
         resume: "allow"
-        entity: "scaling-rl"
+        entity: "exploration"

@@ -2,9 +2,6 @@ import argparse
 import copy
 import os 
 
-import imageio
-import skimage
-        
 import numpy as np 
 from typing import List
 

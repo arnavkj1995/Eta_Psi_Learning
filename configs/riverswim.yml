@@ -98,4 +98,4 @@ kwargs:
         group: "riverswim"
         name: "riverswim"
         resume: "allow"
-        entity: "scaling-rl"
+        entity: "exploration"

@@ -98,4 +98,4 @@ kwargs:
         group: "chain"
         name: "chain"
         resume: "allow"
-        entity: "scaling-rl"
+        entity: "exploration"

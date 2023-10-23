@@ -103,4 +103,4 @@ kwargs:
         group: "pusher"
         name: "pusher"
         resume: "allow"
-        entity: "scaling-rl"
+        entity: "exploration"

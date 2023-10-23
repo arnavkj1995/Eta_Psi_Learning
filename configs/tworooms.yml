@@ -94,4 +94,4 @@ kwargs:
         group: "tworooms"
         name: "tworooms"
         resume: "allow"
-        entity: "scaling-rl"
+        entity: "exploration"
