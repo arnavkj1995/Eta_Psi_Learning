@@ -15,8 +15,8 @@ from hive.utils.utils import create_folder, seeder
 class RecurrentReplayBuffer(BaseReplayBuffer):
     """An efficient version of a recurrent replay buffer that only stores each episode
     once.
+    Uses parts of DreamerV2's replay buffer: https://github.com/danijar/dreamerv2/blob/main/dreamerv2/common/replay.py 
     """
-    # TODO: Do we need self._specs with {observation/action/reward}_{shape/dtype}
     def __init__(
         self,
         directory,
@@ -69,7 +69,6 @@ class RecurrentReplayBuffer(BaseReplayBuffer):
         
     def size(self):
         """Returns the number of transitions stored in the buffer."""
-        # TODO: do we need only stored ones of what is even outside the buffer?
         return max(
             min(self._num_added, self._capacity) - self._stack_size - self._n_step + 1,
             0,
@@ -81,8 +80,6 @@ class RecurrentReplayBuffer(BaseReplayBuffer):
 
         for key, value in transition.items():
             episode[key].append(value)
-            # TODO: Does transition return "is_last" in hive too? Replace this will done flag. Check if done is the right 
-            # thing to do and is done True even when the episode is not complete.
         if transition['truncated'] or transition['terminated']:
             self._add_episode(episode)
             episode.clear()
@@ -90,7 +87,6 @@ class RecurrentReplayBuffer(BaseReplayBuffer):
     def _eplen(self, episode):
         return len(episode['action']) - 1
 
-    # TODO: Convert should be moved to a common utils file
     def _convert(self, value):
         value = np.array(value)
         if np.issubdtype(value.dtype, np.floating):
@@ -104,7 +100,6 @@ class RecurrentReplayBuffer(BaseReplayBuffer):
     def _add_episode(self, episode):
         length = self._eplen(episode)
 
-        # print ('here ', length)
         if length < self._minlen:
             print(f'Skipping short episode of length {length}.')
             return
@@ -141,20 +136,6 @@ class RecurrentReplayBuffer(BaseReplayBuffer):
         return filename
 
     def add(self, observation, action, reward, terminated, truncated, **kwargs):
-        """Adds a transition to the buffer.
-        The required components of a transition are given as positional arguments. The
-        user can pass additional components to store in the buffer as kwargs as long as
-        they were defined in the specification in the constructor.
-        """
-        # TODO: This will work as the add_step function in DV2.
-        # Will need to add a function to add the episode at the end and save the episode
-        # DV2 saves all the episodes to load them again in the future (if required).
-        # Question: Does the replay buffer samples episodes using generator functions in Hive?
-
-        # TODO: Might not need this episode_start thing anymore as episode is not added to storage till its complete.
-        # if self._episode_start:
-        #     self._pad_buffer(self._stack_size - 1)
-        #     self._episode_start = False
         transition = {
             "observation": observation,
             "action": action,
@@ -176,19 +157,14 @@ class RecurrentReplayBuffer(BaseReplayBuffer):
                     f"received {type(transition[key])}."
                 )
 
-        # TODO: _num_players_sharing_buffer: What does this mean?
         if self._num_players_sharing_buffer is None:
             self._add_transition(**transition)
         else:
-            # FIXME: How to handle this stuff?
             self._episode_storage[kwargs["agent_id"]].append(transition)
             if terminated or truncated:
                 for transition in self._episode_storage[kwargs["agent_id"]]:
                     self._add_transition(**transition)
                 self._episode_storage[kwargs["agent_id"]] = []
-
-        # if done:
-        #     self._episode_start = True
 
     def _sample_sequence(self):
         episodes = list(self._complete_eps.values())
@@ -203,8 +179,6 @@ class RecurrentReplayBuffer(BaseReplayBuffer):
         if self._maxlen:
             length = min(length, self._maxlen)
         
-        # Randomize length to avoid all chunks ending at the same time in case the
-        # episodes are all of the same length.
         length -= np.random.randint(self._minlen)
         length = max(self._minlen, length)
         upper = total - length + 1
@@ -240,21 +214,11 @@ class RecurrentReplayBuffer(BaseReplayBuffer):
             return chunk
 
     def sample(self, batch_size, length):
-        """Sample transitions from the buffer. For a given transition, if it's
-        done is True, the next_observation value should not be taken to have any
-        meaning.
-
-        Args:
-            batch_size (int): Number of transitions to sample.
-        """
-        # TODO: not the most optimized implementation
         batch = [self._generate_chunks(length) for _ in range(batch_size)]
         batch = {k: np.array([dic[k] for dic in batch], dtype=batch[0][k].dtype) for k in batch[0] if k != 'info'}
         return batch
 
     def _load_episodes(self, directory, capacity=None, minlen=1):
-        # The returned directory from filenames to episodes is guaranteed to be in
-        # temporally sorted order.
         filenames = sorted(directory.glob('*.npz'))
         if capacity:
             num_steps = 0
