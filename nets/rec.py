@@ -65,8 +65,8 @@ class RecurrentSRNetwork(nn.Module):
         h_list = []
         h = torch.zeros(state.shape[1], self._transition_net.hidden_size, device=self._device)
         for s in state:
-            h_list.append(self.recurrent_step(s, h))
-            h = h_list[-1]
+            h = self.recurrent_step(s, h)
+            h_list.append(h)
 
         hidden = torch.stack(h_list, dim=0)
 
@@ -115,8 +115,6 @@ class RecurrentEncoderNetwork(nn.Module):
         return hidden
 
     def forward(self, x):
-        # Encoding state
-        # State_ -> [B, S, E]; Action_ -> [B, S, E]
         state = x[0]
         if self._state_encoder:
             state = self._state_encoder(state)
@@ -124,8 +122,8 @@ class RecurrentEncoderNetwork(nn.Module):
         h_list = []
         h = torch.zeros(state.shape[1], self._transition_net.hidden_size, device=self._device)
         for s in state:
-            h_list.append(self.recurrent_step(s, h))
-            h = h_list[-1]
+            h = self.recurrent_step(s, h)
+            h_list.append(h)
 
         hidden = torch.stack(h_list, dim=0)
 

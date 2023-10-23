@@ -168,7 +168,7 @@ class SingleAgentRunnerEval(SingleAgentRunner):
                 environment, observation, episode_metrics, transition_info, agent_state
             )
             self.update_step()
-            
+
             runner_episode_log['vis_onehot'] += observation['output']
             steps += 1
         

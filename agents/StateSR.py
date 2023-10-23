@@ -225,7 +225,6 @@ class StateSRAgent(Agent):
         elif self._policy == "exploration":
             Q = self._q_val(phi, psi)
             action = np.argmax(Q.cpu().detach().numpy(), axis=-1)[0]
-            episode_log["Q_vals"].append(Q[0].cpu().detach().numpy())
         else:
             raise ValueError("Policy not recognized")
         
